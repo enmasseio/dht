@@ -1,0 +1,23 @@
+{
+  "name": "mbus",
+  "version": "0.0.0",
+  "description": "A scalable, distributed message bus",
+  "author": "Jos de Jong <wjosdejong@gmail.com> (https://github.com/josdejong)",
+  "keywords": [
+    "distributed",
+    "scalable",
+    "p2p",
+    "peer-to-peer",
+    "message bus",
+    "event",
+    "emitter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/enmasseio/mbus.git"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
