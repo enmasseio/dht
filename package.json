@@ -17,7 +17,14 @@
     "url": "git://github.com/enmasseio/distribus.git"
   },
   "dependencies": {
+    "sha1": "^1.1.0"
   },
   "devDependencies": {
+    "mocha": "^1.18.2",
+    "istanbul": "^0.2.6"
+  },
+  "scripts": {
+    "test": "mocha test --recursive",
+    "coverage": "istanbul cover _mocha -- test --recursive; echo \"\nCoverage report is available at ./coverage/lcov-report/index.html\""
   }
 }
