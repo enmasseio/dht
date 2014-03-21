@@ -4,14 +4,14 @@ var assert = require('assert'),
 describe('util', function() {
 
   it('should generate a key', function () {
-    var ids = [
+    var strings = [
       'key',
       'other key',
       'and yet another key'
     ];
 
-    ids.forEach(function (id) {
-      var key = util.key(id);
+    strings.forEach(function (strings) {
+      var key = util.key(strings);
 
       assert(Array.isArray(key));
       assert.equal(key.length, 20);
@@ -33,15 +33,19 @@ describe('util', function() {
 
     key2 = util.key('key'); key2[19] += 1;
     assert.deepEqual(util.distance(key1, key2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
+    assert.deepEqual(util.distance(key2, key1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
 
     key2 = util.key('key'); key2[19] += 2;
     assert.deepEqual(util.distance(key1, key2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62]);
+    assert.deepEqual(util.distance(key2, key1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62]);
 
     key2 = util.key('key'); key2[18] += 20;
     assert.deepEqual(util.distance(key1, key2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,252,0]);
+    assert.deepEqual(util.distance(key2, key1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,252,0]);
 
     key2 = util.key('key'); key2[0] += 10;
     assert.deepEqual(util.distance(key1, key2), [22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+    assert.deepEqual(util.distance(key2, key1), [22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
   });
 
   it('should compare two keys', function () {
