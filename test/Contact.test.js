@@ -17,4 +17,20 @@ describe('Contact', function() {
     assert.throws(function () {Contact()}, /Constructor must be called with the new operator/);
   });
 
+  it('should ping a live contact', function () {
+    var node = new Node('test');
+
+    var contact = new Contact(node.id, node);
+
+    assert.strictEqual(contact.ping(), true);
+  });
+
+  it('should ping a dead contact', function () {
+    var node = new Node('test');
+    node.leave();
+
+    var contact = new Contact(node.id, node);
+
+    assert.strictEqual(contact.ping(), false);
+  });
 });
