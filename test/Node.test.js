@@ -23,7 +23,7 @@ describe('Node', function() {
   it('should store a node connection in the right bucket', function () {
     var node1 = new Node('node1');
 
-    var id2 = util.key('node2');
+    var id2 = util.id('node2');
     var contact2 = new Contact(id2);
     var index2 = util.bucketIndex(node1.id, id2);
     assert.equal(index2, 159);
@@ -31,7 +31,7 @@ describe('Node', function() {
     node1.storeContact(contact2);
     assert.deepEqual(node1.buckets[index2], [contact2]);
 
-    var id3 = util.key('node3');
+    var id3 = util.id('node3');
     var contact3 = new Contact(id3);
     var index3 = util.bucketIndex(node1.id, id3);
     assert.equal(index3, 158);
@@ -43,7 +43,7 @@ describe('Node', function() {
   it('should store an existing contact only once', function () {
     var node1 = new Node('node1');
 
-    var id2 = util.key('node2');
+    var id2 = util.id('node2');
     var contact2 = new Contact(id2);
     var index2 = util.bucketIndex(node1.id, id2);
     assert.equal(index2, 159);
@@ -60,12 +60,12 @@ describe('Node', function() {
     var node1 = new Node('node1');
 
     // create two contacts with the same bucket index
-    var id3 = util.key('node3');
+    var id3 = util.id('node3');
     var contact3 = new Contact(id3);
     var index3 = util.bucketIndex(node1.id, id3);
     assert.equal(index3, 158);
 
-    var id4 = util.key('node4');
+    var id4 = util.id('node4');
     var contact4 = new Contact(id4);
     var index4 = util.bucketIndex(node1.id, id4);
     assert.equal(index4, 158);
@@ -94,7 +94,7 @@ describe('Node', function() {
     var index2 = util.bucketIndex(node1.id, node2.id);
     assert.equal(index2, 159);
 
-    // create two contacts with the same bucket index
+    // create a lot of contacts
     for (var i = 0; i < 50; i++) {
       var node = new Node('node' + (i + 3));
       var contact = new Contact(node.id, node);
@@ -120,7 +120,7 @@ describe('Node', function() {
     var index2 = util.bucketIndex(node1.id, node2.id);
     assert.equal(index2, 159);
 
-    // create two contacts with the same bucket index
+    // create a lot of contacts
     for (var i = 0; i < 50; i++) {
       var node = new Node('node' + (i + 3));
       var contact = new Contact(node.id, node);
@@ -140,7 +140,96 @@ describe('Node', function() {
     assert.deepEqual(bucket[bucket.length - 1], contact2);
   });
 
-  it.skip('should find a node', function () {
+  it('should throw an error when storing a non-contact as contact', function () {
+    var node1 = new Node('node1');
+
+    assert.throws(function () {node1.storeContact()}, /Instance of contact expected as parameter contact/);
+    assert.throws(function () {node1.storeContact(2)}, /Instance of contact expected as parameter contact/);
+    assert.throws(function () {node1.storeContact({})}, /Instance of contact expected as parameter contact/);
+  });
+
+  describe('onFindNode', function () {
+    var node1;
+
+    before(function () {
+      node1 = new Node('node1');
+
+      // create two contacts with the same bucket index
+      for (var i = 0; i < 1000; i++) {
+        var node = new Node('node' + (i + 3));
+        var contact = new Contact(node.id, node);
+        node1.storeContact(contact);
+      }
+
+      // console.log(bucketsToJSON(node1.buckets));
+    });
+
+    it('should find the closest k contacts from a node having less than k contacts', function () {
+      var node = new Node('node1');
+
+      // node has no contacts
+      var someId = util.id('someId');
+      assert.equal(node.onFindContact(someId).length, 0);
+
+      // node with one contact
+      var contact = new Contact(util.id('node2'));
+      node.storeContact(contact);
+      assert.equal(node.onFindContact(someId).length, 1);
+    });
+
+    it('should find the closest k contacts from a node from a filled bucket', function () {
+      // pick one node from one of the buckets of node1 to search
+      var theLuckyBucket = 158; // bucket 158 contains 20 contacts
+      var searchedNode = node1.buckets[theLuckyBucket][10].node;
+
+      var id = searchedNode.id;
+      var index = util.bucketIndex(node1.id, id);
+      assert.equal(index, theLuckyBucket);
+      assert.equal(node1.buckets[index].length, 20,
+          'Bucket with ' + theLuckyBucket + ' must be filled for this test');
+
+      var contacts = node1.onFindContact(id);
+      assert.equal(contacts.length, 20);
+      assert.deepEqual(contacts[0].node, searchedNode);
+    });
+
+    it('should find the closest k contacts from a node, from a non-filled bucket', function () {
+      // pick one node from one of the buckets of node1 to search
+      var theLuckyBucket = 152; // bucket 152 contains 2 contacts
+      var searchedNode = node1.buckets[theLuckyBucket][1].node;
+
+      var id = searchedNode.id;
+      var index = util.bucketIndex(node1.id, id);
+      assert.equal(index, theLuckyBucket);
+      assert.equal(node1.buckets[index].length, 2, 'huh? I thought bucket ' + theLuckyBucket + ' contained 2 nodes?');
+
+      var contacts = node1.onFindContact(id);
+      assert.equal(contacts.length, 20);
+      assert.deepEqual(contacts[0].node, searchedNode);
+    });
+
+    it('should find the closest k contacts from a node which is not listed itself', function () {
+      // node 100 is not listed in the contacts of node1
+      var searchedNode = new Node('node100');
+      var id = searchedNode.id;
+      var contacts = node1.onFindContact(id);
+
+      // do the search ourselves, see if it matches the returned results
+      var allContacts = node1.buckets
+          .reduce(function (prev, cur) {
+            return prev.concat(cur);
+          }).sort(function (a, b) {
+            return util.compare(util.distance(id, a.id), util.distance(id, b.id));
+          })
+          .splice(0, 20);
+
+      // see if we end up with the same results (but from a raw search
+      assert.deepEqual(allContacts, contacts);
+    });
+
+  });
+
+  it.skip('should find the closest k contacts in the network', function () {
 
   });
 
@@ -157,8 +246,29 @@ describe('Node', function() {
 
   });
 
-  it.skip('should join and leave a network', function () {
+  it.skip('should leave a network', function () {
 
   });
+
+  function bucketsToJSON(buckets) {
+    return buckets
+        .map(function (bucket, index) {
+          return {
+            index: index,
+            contacts: contactsToJSON(bucket)
+          };
+        })
+        .filter(function (bucket) {
+          return bucket != null;
+        });
+  }
+
+  function contactsToJSON(contacts) {
+    return contacts.map(contactToJSON);
+  }
+
+  function contactToJSON(contact) {
+    return contact.node.name;
+  }
 
 });
