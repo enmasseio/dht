@@ -1,4 +1,5 @@
 var assert = require('assert'),
+    Promise = require('bluebird'),
     util = require('../lib/util'),
     Node = require('../lib/Node'),
     Contact = require('../lib/Contact');
@@ -20,7 +21,7 @@ describe('Node', function() {
     assert.throws(function () {new Node(1234)}, /Parameter name must be a non-empty string/);
   });
 
-  it('should store a node connection in the right bucket', function () {
+  it('should store a node connection in the right bucket', function (done) {
     var node1 = new Node('node1');
 
     var id2 = util.id('node2');
@@ -28,16 +29,25 @@ describe('Node', function() {
     var index2 = util.bucketIndex(node1.id, id2);
     assert.equal(index2, 159);
 
-    node1.storeContact(contact2);
-    assert.deepEqual(node1.buckets[index2], [contact2]);
+    var id3, contact3, index3;
 
-    var id3 = util.id('node3');
-    var contact3 = new Contact(id3);
-    var index3 = util.bucketIndex(node1.id, id3);
-    assert.equal(index3, 158);
+    node1.storeContact(contact2)
+        .then(function () {
+          assert.deepEqual(node1.buckets[index2], [contact2]);
+        })
+        .then(function () {
+          id3 = util.id('node3');
+          contact3 = new Contact(id3);
+          index3 = util.bucketIndex(node1.id, id3);
+          assert.equal(index3, 158);
 
-    node1.storeContact(contact3);
-    assert.deepEqual(node1.buckets[index3], [contact3]);
+          return node1.storeContact(contact3);
+        })
+        .then(function () {
+          assert.deepEqual(node1.buckets[index3], [contact3]);
+          done();
+        });
+
   });
 
   it('should store an existing contact only once', function () {
@@ -86,7 +96,7 @@ describe('Node', function() {
     assert.deepEqual(node1.buckets[158], [contact3, contact4]);
   });
 
-  it('should not replace existing, alive contact for new contact when the bucket is full', function () {
+  it('should not replace existing, alive contact for new contact when the bucket is full', function (done) {
     var node1 = new Node('node1');
 
     var node2 = new Node('node2');
@@ -95,24 +105,35 @@ describe('Node', function() {
     assert.equal(index2, 159);
 
     // create a lot of contacts
+    var contacts = [];
     for (var i = 0; i < 50; i++) {
       var node = new Node('node' + (i + 3));
       var contact = new Contact(node.id, node);
-      node1.storeContact(contact);
+      contacts.push(contact);
     }
 
-    var bucket = node1.buckets[index2];
-    assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
+    var bucket, leastSeen;
+    Promise
+        .map(contacts, function (contact) {
+          return node1.storeContact(contact);
+        })
+        .then(function () {
+          bucket = node1.buckets[index2];
+          assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
 
-    var leastSeen = bucket[0];
+          leastSeen = bucket[0];
 
-    node1.storeContact(contact2);
+          return node1.storeContact(contact2);
+        })
+        .then(function () {
+          // node2 should not be added, leastSeen should be moved to tail
+          assert.deepEqual(bucket[bucket.length - 1], leastSeen);
 
-    // node2 should not be added, leastSeen should be moved to tail
-    assert.deepEqual(bucket[bucket.length - 1], leastSeen);
+          done();
+        });
   });
 
-  it('should replace existing, dead contact for a new contact when the bucket is full', function () {
+  it('should replace existing, dead contact for a new contact when the bucket is full', function (done) {
     var node1 = new Node('node1');
 
     var node2 = new Node('node2');
@@ -121,31 +142,61 @@ describe('Node', function() {
     assert.equal(index2, 159);
 
     // create a lot of contacts
+    var contacts = [];
     for (var i = 0; i < 50; i++) {
       var node = new Node('node' + (i + 3));
       var contact = new Contact(node.id, node);
-      node1.storeContact(contact);
+      contacts.push(contact);
     }
 
-    var bucket = node1.buckets[index2];
-    assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
+    var bucket;
+    Promise
+        .map(contacts, function (contact) {
+          return node1.storeContact(contact);
+        })
+        .then(function () {
+          bucket = node1.buckets[index2];
+          assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
 
-    // change the leastSeen to dead
-    var leastSeen = bucket[0];
-    leastSeen.node.leave();
+          // change the leastSeen to dead
+          var leastSeen = bucket[0];
+          leastSeen.node.leave();
 
-    node1.storeContact(contact2);
-
-    // node2 should be added, leastSeen should be removed
-    assert.deepEqual(bucket[bucket.length - 1], contact2);
+          return node1.storeContact(contact2);
+        })
+        .then(function () {
+          // node2 should be added, leastSeen should be removed
+          assert.deepEqual(bucket[bucket.length - 1], contact2);
+          done();
+        });
   });
 
-  it('should throw an error when storing a non-contact as contact', function () {
+  it('should throw an error when storing a non-contact as contact', function (done) {
     var node1 = new Node('node1');
 
-    assert.throws(function () {node1.storeContact()}, /Instance of contact expected as parameter contact/);
-    assert.throws(function () {node1.storeContact(2)}, /Instance of contact expected as parameter contact/);
-    assert.throws(function () {node1.storeContact({})}, /Instance of contact expected as parameter contact/);
+    var errs = [];
+    node1.storeContact()
+        .catch(function (err) {errs.push(err)})
+
+        .then(function () {
+          return node1.storeContact(2);
+        })
+        .catch(function (err) {errs.push(err)})
+
+        .then(function () {
+          return node1.storeContact({});
+        })
+        .catch(function (err) {errs.push(err)})
+
+        .then(function () {
+          assert.equal(errs.length, 3);
+
+          errs.forEach(function (err) {
+            assert(/Instance of contact expected as parameter contact/.test(err));
+          });
+
+          done();
+        });
   });
 
   describe('onFindNode', function () {
