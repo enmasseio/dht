@@ -3,7 +3,7 @@ var assert = require('assert'),
 
 describe('util', function() {
 
-  it('should generate a key', function () {
+  it('should generate an sha1 key as byte array', function () {
     var strings = [
       'key',
       'other key',
@@ -11,7 +11,7 @@ describe('util', function() {
     ];
 
     strings.forEach(function (strings) {
-      var id = util.id(strings);
+      var id = util.sha1(strings);
 
       assert(Array.isArray(id));
       assert.equal(id.length, 20);
@@ -23,27 +23,42 @@ describe('util', function() {
     });
   });
 
+  it('should generate an sha1 key as string', function () {
+    var strings = [
+      'key',
+      'other key',
+      'and yet another key'
+    ];
+
+    strings.forEach(function (strings) {
+      var id = util.sha1text(strings);
+
+      assert(typeof id === 'string');
+      assert.equal(id.length, 40);
+    });
+  });
+
   it('should calculate the distance between two ids', function () {
-    var id1 = util.id('key'),
+    var id1 = util.sha1('key'),
         id2;
 
     assert.deepEqual(id1, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);
 
     assert.deepEqual(util.distance(id1, id1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
 
-    id2 = util.id('key'); id2[19] += 1;
+    id2 = util.sha1('key'); id2[19] += 1;
     assert.deepEqual(util.distance(id1, id2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
     assert.deepEqual(util.distance(id2, id1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]);
 
-    id2 = util.id('key'); id2[19] += 2;
+    id2 = util.sha1('key'); id2[19] += 2;
     assert.deepEqual(util.distance(id1, id2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62]);
     assert.deepEqual(util.distance(id2, id1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62]);
 
-    id2 = util.id('key'); id2[18] += 20;
+    id2 = util.sha1('key'); id2[18] += 20;
     assert.deepEqual(util.distance(id1, id2), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,252,0]);
     assert.deepEqual(util.distance(id2, id1), [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,252,0]);
 
-    id2 = util.id('key'); id2[0] += 10;
+    id2 = util.sha1('key'); id2[0] += 10;
     assert.deepEqual(util.distance(id1, id2), [22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
     assert.deepEqual(util.distance(id2, id1), [22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
   });
@@ -63,23 +78,23 @@ describe('util', function() {
   });
 
   it('should calculate the bucket index for two ids', function () {
-    var id1 = util.id('key'),
+    var id1 = util.sha1('key'),
         id2;
 
     assert.deepEqual(id1, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);
 
     assert.deepEqual(util.bucketIndex(id1, id1), 0);
 
-    id2 = util.id('key'); id2[19] += 1;
+    id2 = util.sha1('key'); id2[19] += 1;
     assert.deepEqual(util.bucketIndex(id1, id2), 0);
 
-    id2 = util.id('key'); id2[19] += 2;
+    id2 = util.sha1('key'); id2[19] += 2;
     assert.deepEqual(util.bucketIndex(id1, id2), 5);
 
-    id2 = util.id('key'); id2[18] += 20;
+    id2 = util.sha1('key'); id2[18] += 20;
     assert.deepEqual(util.bucketIndex(id1, id2), 15);
 
-    id2 = util.id('key'); id2[0] += 10;
+    id2 = util.sha1('key'); id2[0] += 10;
     assert.deepEqual(util.bucketIndex(id1, id2), 156);
   });
 

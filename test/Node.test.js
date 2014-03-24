@@ -24,7 +24,7 @@ describe('Node', function() {
   it('should store a node connection in the right bucket', function (done) {
     var node1 = new Node('node1');
 
-    var id2 = util.id('node2');
+    var id2 = util.sha1('node2');
     var contact2 = new Contact(id2);
     var index2 = util.bucketIndex(node1.id, id2);
     assert.equal(index2, 159);
@@ -36,7 +36,7 @@ describe('Node', function() {
           assert.deepEqual(node1.buckets[index2], [contact2]);
         })
         .then(function () {
-          id3 = util.id('node3');
+          id3 = util.sha1('node3');
           contact3 = new Contact(id3);
           index3 = util.bucketIndex(node1.id, id3);
           assert.equal(index3, 158);
@@ -53,7 +53,7 @@ describe('Node', function() {
   it('should store an existing contact only once', function () {
     var node1 = new Node('node1');
 
-    var id2 = util.id('node2');
+    var id2 = util.sha1('node2');
     var contact2 = new Contact(id2);
     var index2 = util.bucketIndex(node1.id, id2);
     assert.equal(index2, 159);
@@ -70,12 +70,12 @@ describe('Node', function() {
     var node1 = new Node('node1');
 
     // create two contacts with the same bucket index
-    var id3 = util.id('node3');
+    var id3 = util.sha1('node3');
     var contact3 = new Contact(id3);
     var index3 = util.bucketIndex(node1.id, id3);
     assert.equal(index3, 158);
 
-    var id4 = util.id('node4');
+    var id4 = util.sha1('node4');
     var contact4 = new Contact(id4);
     var index4 = util.bucketIndex(node1.id, id4);
     assert.equal(index4, 158);
@@ -199,7 +199,7 @@ describe('Node', function() {
         });
   });
 
-  describe('onFindNode', function () {
+  describe('onFindContact', function () {
     var node1;
 
     before(function () {
@@ -219,11 +219,11 @@ describe('Node', function() {
       var node = new Node('node1');
 
       // node has no contacts
-      var someId = util.id('someId');
+      var someId = util.sha1('someId');
       assert.equal(node.onFindContact(someId).length, 0);
 
       // node with one contact
-      var contact = new Contact(util.id('node2'));
+      var contact = new Contact(util.sha1('node2'));
       node.storeContact(contact);
       assert.equal(node.onFindContact(someId).length, 1);
     });
