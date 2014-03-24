@@ -21,184 +21,188 @@ describe('Node', function() {
     assert.throws(function () {new Node(1234)}, /Parameter name must be a non-empty string/);
   });
 
-  it('should store a node connection in the right bucket', function (done) {
-    var node1 = new Node('node1');
+  describe('onStoreContact', function () {
 
-    var id2 = util.sha1('node2');
-    var contact2 = new Contact(id2);
-    var index2 = util.bucketIndex(node1.id, id2);
-    assert.equal(index2, 159);
+    it('should store a node connection in the right bucket', function (done) {
+      var node1 = new Node('node1');
 
-    var id3, contact3, index3;
+      var id2 = util.sha1('node2');
+      var contact2 = new Contact(id2);
+      var index2 = util.bucketIndex(node1.id, id2);
+      assert.equal(index2, 159);
 
-    node1.storeContact(contact2)
-        .then(function () {
-          assert.deepEqual(node1.buckets[index2], [contact2]);
-        })
-        .then(function () {
-          id3 = util.sha1('node3');
-          contact3 = new Contact(id3);
-          index3 = util.bucketIndex(node1.id, id3);
-          assert.equal(index3, 158);
+      var id3, contact3, index3;
 
-          return node1.storeContact(contact3);
-        })
-        .then(function () {
-          assert.deepEqual(node1.buckets[index3], [contact3]);
-          done();
-        });
+      node1.onStoreContact(contact2)
+          .then(function () {
+            assert.deepEqual(node1.buckets[index2], [contact2]);
+          })
+          .then(function () {
+            id3 = util.sha1('node3');
+            contact3 = new Contact(id3);
+            index3 = util.bucketIndex(node1.id, id3);
+            assert.equal(index3, 158);
 
-  });
-
-  it('should store an existing contact only once', function () {
-    var node1 = new Node('node1');
-
-    var id2 = util.sha1('node2');
-    var contact2 = new Contact(id2);
-    var index2 = util.bucketIndex(node1.id, id2);
-    assert.equal(index2, 159);
-
-    node1.storeContact(contact2);
-    assert.deepEqual(node1.buckets[index2], [contact2]);
-
-    // storing again should leave the bucket as it is
-    node1.storeContact(contact2);
-    assert.deepEqual(node1.buckets[index2], [contact2]);
-  });
-
-  it('should move latest active contacts to the buckets tail', function () {
-    var node1 = new Node('node1');
-
-    // create two contacts with the same bucket index
-    var id3 = util.sha1('node3');
-    var contact3 = new Contact(id3);
-    var index3 = util.bucketIndex(node1.id, id3);
-    assert.equal(index3, 158);
-
-    var id4 = util.sha1('node4');
-    var contact4 = new Contact(id4);
-    var index4 = util.bucketIndex(node1.id, id4);
-    assert.equal(index4, 158);
-
-    node1.storeContact(contact3);
-    assert.deepEqual(node1.buckets[158], [contact3]);
-
-    node1.storeContact(contact4);
-    assert.deepEqual(node1.buckets[158], [contact3, contact4]);
-
-    node1.storeContact(contact3);
-    assert.deepEqual(node1.buckets[158], [contact4, contact3]);
-
-    node1.storeContact(contact3);
-    assert.deepEqual(node1.buckets[158], [contact4, contact3]);
-
-    node1.storeContact(contact4);
-    assert.deepEqual(node1.buckets[158], [contact3, contact4]);
-  });
-
-  it('should not replace existing, alive contact for new contact when the bucket is full', function (done) {
-    var node1 = new Node('node1');
-
-    var node2 = new Node('node2');
-    var contact2 = new Contact(node2.id, node2);
-    var index2 = util.bucketIndex(node1.id, node2.id);
-    assert.equal(index2, 159);
-
-    // create a lot of contacts
-    var contacts = [];
-    for (var i = 0; i < 50; i++) {
-      var node = new Node('node' + (i + 3));
-      var contact = new Contact(node.id, node);
-      contacts.push(contact);
-    }
-
-    var bucket, leastSeen;
-    Promise
-        .map(contacts, function (contact) {
-          return node1.storeContact(contact);
-        })
-        .then(function () {
-          bucket = node1.buckets[index2];
-          assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
-
-          leastSeen = bucket[0];
-
-          return node1.storeContact(contact2);
-        })
-        .then(function () {
-          // node2 should not be added, leastSeen should be moved to tail
-          assert.deepEqual(bucket[bucket.length - 1], leastSeen);
-
-          done();
-        });
-  });
-
-  it('should replace existing, dead contact for a new contact when the bucket is full', function (done) {
-    var node1 = new Node('node1');
-
-    var node2 = new Node('node2');
-    var contact2 = new Contact(node2.id, node2);
-    var index2 = util.bucketIndex(node1.id, node2.id);
-    assert.equal(index2, 159);
-
-    // create a lot of contacts
-    var contacts = [];
-    for (var i = 0; i < 50; i++) {
-      var node = new Node('node' + (i + 3));
-      var contact = new Contact(node.id, node);
-      contacts.push(contact);
-    }
-
-    var bucket;
-    Promise
-        .map(contacts, function (contact) {
-          return node1.storeContact(contact);
-        })
-        .then(function () {
-          bucket = node1.buckets[index2];
-          assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
-
-          // change the leastSeen to dead
-          var leastSeen = bucket[0];
-          leastSeen.node.leave();
-
-          return node1.storeContact(contact2);
-        })
-        .then(function () {
-          // node2 should be added, leastSeen should be removed
-          assert.deepEqual(bucket[bucket.length - 1], contact2);
-          done();
-        });
-  });
-
-  it('should throw an error when storing a non-contact as contact', function (done) {
-    var node1 = new Node('node1');
-
-    var errs = [];
-    node1.storeContact()
-        .catch(function (err) {errs.push(err)})
-
-        .then(function () {
-          return node1.storeContact(2);
-        })
-        .catch(function (err) {errs.push(err)})
-
-        .then(function () {
-          return node1.storeContact({});
-        })
-        .catch(function (err) {errs.push(err)})
-
-        .then(function () {
-          assert.equal(errs.length, 3);
-
-          errs.forEach(function (err) {
-            assert(/Instance of contact expected as parameter contact/.test(err));
+            return node1.onStoreContact(contact3);
+          })
+          .then(function () {
+            assert.deepEqual(node1.buckets[index3], [contact3]);
+            done();
           });
 
-          done();
-        });
-  });
+    });
 
+    it('should store an existing contact only once', function () {
+      var node1 = new Node('node1');
+
+      var id2 = util.sha1('node2');
+      var contact2 = new Contact(id2);
+      var index2 = util.bucketIndex(node1.id, id2);
+      assert.equal(index2, 159);
+
+      node1.onStoreContact(contact2);
+      assert.deepEqual(node1.buckets[index2], [contact2]);
+
+      // storing again should leave the bucket as it is
+      node1.onStoreContact(contact2);
+      assert.deepEqual(node1.buckets[index2], [contact2]);
+    });
+
+    it('should move latest active contacts to the buckets tail', function () {
+      var node1 = new Node('node1');
+
+      // create two contacts with the same bucket index
+      var id3 = util.sha1('node3');
+      var contact3 = new Contact(id3);
+      var index3 = util.bucketIndex(node1.id, id3);
+      assert.equal(index3, 158);
+
+      var id4 = util.sha1('node4');
+      var contact4 = new Contact(id4);
+      var index4 = util.bucketIndex(node1.id, id4);
+      assert.equal(index4, 158);
+
+      node1.onStoreContact(contact3);
+      assert.deepEqual(node1.buckets[158], [contact3]);
+
+      node1.onStoreContact(contact4);
+      assert.deepEqual(node1.buckets[158], [contact3, contact4]);
+
+      node1.onStoreContact(contact3);
+      assert.deepEqual(node1.buckets[158], [contact4, contact3]);
+
+      node1.onStoreContact(contact3);
+      assert.deepEqual(node1.buckets[158], [contact4, contact3]);
+
+      node1.onStoreContact(contact4);
+      assert.deepEqual(node1.buckets[158], [contact3, contact4]);
+    });
+
+    it('should not replace existing, alive contact for new contact when the bucket is full', function (done) {
+      var node1 = new Node('node1');
+
+      var node2 = new Node('node2');
+      var contact2 = new Contact(node2.id, node2);
+      var index2 = util.bucketIndex(node1.id, node2.id);
+      assert.equal(index2, 159);
+
+      // create a lot of contacts
+      var contacts = [];
+      for (var i = 0; i < 50; i++) {
+        var node = new Node('node' + (i + 3));
+        var contact = new Contact(node.id, node);
+        contacts.push(contact);
+      }
+
+      var bucket, leastSeen;
+      Promise
+          .map(contacts, function (contact) {
+            return node1.onStoreContact(contact);
+          })
+          .then(function () {
+            bucket = node1.buckets[index2];
+            assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
+
+            leastSeen = bucket[0];
+
+            return node1.onStoreContact(contact2);
+          })
+          .then(function () {
+            // node2 should not be added, leastSeen should be moved to tail
+            assert.deepEqual(bucket[bucket.length - 1], leastSeen);
+
+            done();
+          });
+    });
+
+    it('should replace existing, dead contact for a new contact when the bucket is full', function (done) {
+      var node1 = new Node('node1');
+
+      var node2 = new Node('node2');
+      var contact2 = new Contact(node2.id, node2);
+      var index2 = util.bucketIndex(node1.id, node2.id);
+      assert.equal(index2, 159);
+
+      // create a lot of contacts
+      var contacts = [];
+      for (var i = 0; i < 50; i++) {
+        var node = new Node('node' + (i + 3));
+        var contact = new Contact(node.id, node);
+        contacts.push(contact);
+      }
+
+      var bucket;
+      Promise
+          .map(contacts, function (contact) {
+            return node1.onStoreContact(contact);
+          })
+          .then(function () {
+            bucket = node1.buckets[index2];
+            assert.equal(bucket && bucket.length, 20, 'Bucket ' + index2 + ' of node2 should be filled for this test');
+
+            // change the leastSeen to dead
+            var leastSeen = bucket[0];
+            leastSeen.node.leave();
+
+            return node1.onStoreContact(contact2);
+          })
+          .then(function () {
+            // node2 should be added, leastSeen should be removed
+            assert.deepEqual(bucket[bucket.length - 1], contact2);
+            done();
+          });
+    });
+
+    it('should throw an error when storing a non-contact as contact', function (done) {
+      var node1 = new Node('node1');
+
+      var errs = [];
+      node1.onStoreContact()
+          .catch(function (err) {errs.push(err)})
+
+          .then(function () {
+            return node1.onStoreContact(2);
+          })
+          .catch(function (err) {errs.push(err)})
+
+          .then(function () {
+            return node1.onStoreContact({});
+          })
+          .catch(function (err) {errs.push(err)})
+
+          .then(function () {
+            assert.equal(errs.length, 3);
+
+            errs.forEach(function (err) {
+              assert(/Instance of contact expected as parameter contact/.test(err));
+            });
+
+            done();
+          });
+    });
+
+  })
+  
   describe('onFindContact', function () {
     var node1;
 
@@ -209,7 +213,7 @@ describe('Node', function() {
       for (var i = 0; i < 1000; i++) {
         var node = new Node('node' + (i + 3));
         var contact = new Contact(node.id, node);
-        node1.storeContact(contact);
+        node1.onStoreContact(contact);
       }
 
       // console.log(bucketsToJSON(node1.buckets));
@@ -224,7 +228,7 @@ describe('Node', function() {
 
       // node with one contact
       var contact = new Contact(util.sha1('node2'));
-      node.storeContact(contact);
+      node.onStoreContact(contact);
       assert.equal(node.onFindContact(someId).length, 1);
     });
 
@@ -288,10 +292,14 @@ describe('Node', function() {
 
   });
 
-  it('should reply to a ping', function () {
-    var node1 = new Node('node1');
-    assert.strictEqual(node1.onPing(), true);
-  });
+  describe('onPing', function () {
+
+    it('should reply to a ping', function () {
+      var node1 = new Node('node1');
+      assert.strictEqual(node1.onPing(), true);
+    });
+
+  })
 
   it.skip('should join a network', function () {
 
