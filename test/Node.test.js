@@ -307,24 +307,79 @@ describe('Node', function() {
 
   describe('findContact', function () {
 
-    it.skip('should find the closest k contacts in a network with 1 node', function () {
+    it('should find the closest k contacts in a network one level deep', function (done) {
       var node1 = new Node('node1');
-      var contact2 = new Contact(util.sha1('node2'));
-      var contact3 = new Contact(util.sha1('node3'));
-      var contact4 = new Contact(util.sha1('node4'));
-      []
+      var node2 = new Node('node2');
+      var node3 = new Node('node3');
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(node3.id, node3);
+
+      Promise
+          .all([
+              node1.onStoreContact(contact2),
+              node1.onStoreContact(contact3)
+          ])
+
+          // find node2
+          .then(function () {
+            return node1.findContact(util.sha1('node2'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact2, contact3]);
+          })
+
+          // find node3
+          .then(function () {
+            return node1.findContact(util.sha1('node3'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact3, contact2]);
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it.skip('should find the closest k contacts in a network two levels deep', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var node3 = new Node('node3');
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(node3.id, node3);
+
+      Promise
+          .all([
+            node1.onStoreContact(contact2),
+            node2.onStoreContact(contact3)
+          ])
+
+          // find node2
+          .then(function () {
+            return node1.findContact(util.sha1('node2'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact2, contact3]);
+          })
+
+          // find node3
+          .then(function () {
+            return node1.findContact(util.sha1('node3'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact3, contact2]);
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it.skip('should find the closest k contacts in a network n levels deep', function () {
 
     });
 
-    it.skip('should find the closest k contacts in a network with 2 nodes', function () {
-
-    });
-
-    it.skip('should find the closest k contacts in a network with n nodes', function () {
-
-    });
-
-    it.skip('should return all contacts if there are less than k in the network', function () {
+    it.skip('should find the closest k contacts in a network with some dead nodes', function () {
 
     });
 

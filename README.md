@@ -13,7 +13,16 @@ Distribus can be used to
 - Publish/subscribe
 
 
-*Coming soon...*
+## Install
+
+Install via npm:
+
+    npm install distribus
+
+
+## Use
+
+Sorry, you can't yet use it...
 
 
 ## Literature
