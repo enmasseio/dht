@@ -52,7 +52,7 @@ describe('Node', function() {
 
     });
 
-    it('should store an existing contact only once', function () {
+    it('should store an existing contact only once', function (done) {
       var node1 = new Node('node1');
 
       var id2 = util.sha1('node2');
@@ -60,15 +60,22 @@ describe('Node', function() {
       var index2 = util.bucketIndex(node1.id, id2);
       assert.equal(index2, 159);
 
-      node1.onStoreContact(contact2);
-      assert.deepEqual(node1.buckets[index2], [contact2]);
+      node1.onStoreContact(contact2)
+          .then(function () {
+            assert.deepEqual(node1.buckets[index2], [contact2]);
+          })
 
-      // storing again should leave the bucket as it is
-      node1.onStoreContact(contact2);
-      assert.deepEqual(node1.buckets[index2], [contact2]);
+          .then(function() {
+            // storing again should leave the bucket as it is
+            return node1.onStoreContact(contact2);
+          })
+          .then(function () {
+            assert.deepEqual(node1.buckets[index2], [contact2]);
+            done();
+          });
     });
 
-    it('should move latest active contacts to the buckets tail', function () {
+    it('should move latest active contacts to the buckets tail', function (done) {
       var node1 = new Node('node1');
 
       // create two contacts with the same bucket index
@@ -82,20 +89,24 @@ describe('Node', function() {
       var index4 = util.bucketIndex(node1.id, id4);
       assert.equal(index4, 158);
 
-      node1.onStoreContact(contact3);
-      assert.deepEqual(node1.buckets[158], [contact3]);
+      node1.onStoreContact(contact3)
+          .then(function () { assert.deepEqual(node1.buckets[158], [contact3]); })
 
-      node1.onStoreContact(contact4);
-      assert.deepEqual(node1.buckets[158], [contact3, contact4]);
+          .then(function () { return node1.onStoreContact(contact4); })
+          .then(function () {assert.deepEqual(node1.buckets[158], [contact3, contact4]); })
 
-      node1.onStoreContact(contact3);
-      assert.deepEqual(node1.buckets[158], [contact4, contact3]);
+          .then(function () { return node1.onStoreContact(contact3); })
+          .then(function () {assert.deepEqual(node1.buckets[158], [contact4, contact3]); })
 
-      node1.onStoreContact(contact3);
-      assert.deepEqual(node1.buckets[158], [contact4, contact3]);
+          .then(function () { return node1.onStoreContact(contact3); })
+          .then(function () {assert.deepEqual(node1.buckets[158], [contact4, contact3]); })
 
-      node1.onStoreContact(contact4);
-      assert.deepEqual(node1.buckets[158], [contact3, contact4]);
+          .then(function () { return node1.onStoreContact(contact4); })
+          .then(function () {assert.deepEqual(node1.buckets[158], [contact3, contact4]); })
+
+          .then(function () {
+            done();
+          })
     });
 
     it('should not replace existing, alive contact for new contact when the bucket is full', function (done) {
@@ -206,20 +217,28 @@ describe('Node', function() {
   describe('onFindContact', function () {
     var node1;
 
-    before(function () {
+    before(function (done) {
       node1 = new Node('node1');
 
       // create two contacts with the same bucket index
+      var contacts = [];
       for (var i = 0; i < 1000; i++) {
         var node = new Node('node' + (i + 3));
         var contact = new Contact(node.id, node);
-        node1.onStoreContact(contact);
+        contacts.push(contact);
       }
 
+      Promise
+          .map(contacts, function (contact) {
+            return node1.onStoreContact(contact);
+          })
+          .then(function () {
+            done();
+          });
       // console.log(bucketsToJSON(node1.buckets));
     });
 
-    it('should find the closest k contacts from a node having less than k contacts', function () {
+    it('should find the closest k contacts from a node having less than k contacts', function (done) {
       var node = new Node('node1');
 
       // node has no contacts
@@ -228,8 +247,10 @@ describe('Node', function() {
 
       // node with one contact
       var contact = new Contact(util.sha1('node2'));
-      node.onStoreContact(contact);
-      assert.equal(node.onFindContact(someId).length, 1);
+      node.onStoreContact(contact).then(function () {
+        assert.equal(node.onFindContact(someId).length, 1);
+        done();
+      });
     });
 
     it('should find the closest k contacts from a node from a filled bucket', function () {
@@ -284,7 +305,28 @@ describe('Node', function() {
 
   });
 
-  it.skip('should find the closest k contacts in the network', function () {
+  describe('findContact', function () {
+
+    it.skip('should find the closest k contacts in a network with 1 node', function () {
+      var node1 = new Node('node1');
+      var contact2 = new Contact(util.sha1('node2'));
+      var contact3 = new Contact(util.sha1('node3'));
+      var contact4 = new Contact(util.sha1('node4'));
+      []
+
+    });
+
+    it.skip('should find the closest k contacts in a network with 2 nodes', function () {
+
+    });
+
+    it.skip('should find the closest k contacts in a network with n nodes', function () {
+
+    });
+
+    it.skip('should return all contacts if there are less than k in the network', function () {
+
+    });
 
   });
 

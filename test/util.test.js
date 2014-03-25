@@ -98,4 +98,52 @@ describe('util', function() {
     assert.deepEqual(util.bucketIndex(id1, id2), 156);
   });
 
+  describe('sortByDistance', function () {
+
+    it('should sort an array with objects by distance', function () {
+      var array = [
+        {id: [2, 2, 2]},
+        {id: [2, 2, 4]},
+        {id: [2, 2, 1]}
+      ]
+
+      var id = [2, 2, 0];
+      util.sortByDistance(array, id);
+      assert.deepEqual(array, [
+        {id: [2, 2, 1]},
+        {id: [2, 2, 2]},
+        {id: [2, 2, 4]}
+      ]);
+
+      id = [2, 2, 2];
+      util.sortByDistance(array, id);
+      assert.deepEqual(array, [
+        {id: [2, 2, 2]},
+        {id: [2, 2, 1]},
+        {id: [2, 2, 4]}
+      ]);
+    });
+
+    it('should sort an array with objects by distance of a custom property', function () {
+      var id = [2, 2, 0];
+      var array = [
+        {_id: [2, 2, 2]},
+        {_id: [2, 2, 4]},
+        {_id: [2, 2, 1]}
+      ]
+
+      // should throw an error as there is no property 'id'
+      assert.throws(function () {util.sortByDistance(array, id);});
+
+      util.sortByDistance(array, id, '_id');
+
+      assert.deepEqual(array, [
+        {_id: [2, 2, 1]},
+        {_id: [2, 2, 2]},
+        {_id: [2, 2, 4]}
+      ]);
+    })
+
+  });
+
 });
