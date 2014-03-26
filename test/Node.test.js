@@ -300,7 +300,25 @@ describe('Node', function() {
           .splice(0, 20);
 
       // see if we end up with the same results (but from a raw search
-      assert.deepEqual(allContacts, contacts);
+      assert.deepEqual(contacts, allContacts);
+    });
+
+    it('should find the closest k contacts to the nodes id itself', function () {
+      // node 100 is not listed in the contacts of node1
+      var id = node1.id;
+      var contacts = node1.onFindContact(id);
+
+      // do the search ourselves, see if it matches the returned results
+      var allContacts = node1.buckets
+          .reduce(function (prev, cur) {
+            return prev.concat(cur);
+          }).sort(function (a, b) {
+            return util.compare(util.distance(id, a.id), util.distance(id, b.id));
+          })
+          .splice(0, 20);
+
+      // see if we end up with the same results (but from a raw search
+      assert.deepEqual(contacts, allContacts);
     });
 
   });
@@ -341,7 +359,7 @@ describe('Node', function() {
           });
     });
 
-    it.skip('should find the closest k contacts in a network two levels deep', function (done) {
+    it('should find the closest k contacts in a network two levels deep', function (done) {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
       var node3 = new Node('node3');
@@ -354,7 +372,15 @@ describe('Node', function() {
             node2.onStoreContact(contact3)
           ])
 
-          // find node2
+          // find node3 from node2
+          .then(function () {
+            return node2.findContact(util.sha1('node3'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact3]);
+          })
+
+          // find node2 from node1
           .then(function () {
             return node1.findContact(util.sha1('node2'));
           })
@@ -362,7 +388,7 @@ describe('Node', function() {
             assert.deepEqual(contacts, [contact2, contact3]);
           })
 
-          // find node3
+          // find node3 from node1
           .then(function () {
             return node1.findContact(util.sha1('node3'));
           })

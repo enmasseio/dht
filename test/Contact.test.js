@@ -39,4 +39,17 @@ describe('Contact', function() {
       done();
     });
   });
+
+  it('should find a contact', function () {
+    var node1 = new Node('node1');
+    var node2 = new Node('node2');
+    node1.onStoreContact(new Contact(node2.id, node2));
+    
+    var contact = new Contact(node1.id, node1);
+    
+    contact.findContact(node2.id).then(function (results) {
+      assert.deepEqual(results, [new Contact(node2.id, node2)]);
+    });
+  });
+
 });
