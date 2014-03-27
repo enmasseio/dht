@@ -405,8 +405,54 @@ describe('Node', function() {
 
     });
 
-    it.skip('should find the closest k contacts in a network with some dead nodes', function () {
+    it('should find the closest k contacts in a network with a dead node', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var contact2 = new Contact(node2.id); // Note: no node specified! node2 is dead
 
+      Promise
+          .all([
+            node1.onStoreContact(contact2)
+          ])
+
+          // find node2 from node1
+          .then(function () {
+            return node2.findContact(util.sha1('node1'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, []); // must return nothing as node2 is dead
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it('should find the closest k contacts in a network with some dead nodes', function (done) {
+      var node1 = new Node('node1');
+      var node3 = new Node('node3');
+      var contact2 = new Contact(util.sha1('node2')); // Note: no node specified! node2 is dead
+      var contact3 = new Contact(node3.id, node3);
+      var contact4 = new Contact(util.sha1('node4')); // Note: no node specified! node4 is dead
+
+      Promise
+          .all([
+            node1.onStoreContact(contact2),
+            node1.onStoreContact(contact3),
+            node3.onStoreContact(contact4)
+          ])
+
+          // find node4 from node1
+          .then(function () {
+            return node1.findContact(util.sha1('node4'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact3]); // should return the only alive contact: node3
+          })
+
+          .then(function () {
+            done();
+          });
     });
 
   });

@@ -22,12 +22,12 @@ Install via npm:
 
 ## Use
 
-Sorry, you can't yet use it...
+Sorry, you can't yet use it... coming soon though.
 
 
 ## Literature
 
-- [Kademlia](http://en.wikipedia.org/wiki/Kademlia)
+- [Kademlia (Wikipedia)](http://en.wikipedia.org/wiki/Kademlia)
 - [kademlia (Paper)](http://pdos.csail.mit.edu/~petar/papers/maymounkov-kademlia-lncs.pdf)
 - [Distributed hash table](http://en.wikipedia.org/wiki/Distributed_hash_table)
 - [Tutorial](http://tutorials.jenkov.com/p2p/index.html)
