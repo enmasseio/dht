@@ -1,4 +1,5 @@
 var assert = require('assert'),
+    Id = require('../lib/Id'),
     Node = require('../lib/Node'),
     Contact = require('../lib/Contact');
 
@@ -9,6 +10,7 @@ describe('Contact', function() {
 
     var contact = new Contact(node.id, node);
     assert(contact instanceof Contact);
+    assert(contact.id instanceof Id);
     assert.strictEqual(contact.node, node);
     assert.deepEqual(contact.id, node.id);
   });
