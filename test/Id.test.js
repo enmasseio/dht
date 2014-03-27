@@ -36,6 +36,16 @@ describe('Id', function() {
     assert.deepEqual(id.bytes, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);
   });
 
+  it('should create an Id containing a zero', function () {
+    var id = new Id('00');
+    assert.deepEqual(id.bytes, [0]);
+    assert.equal(id.toString(), '00');
+
+    var id2 = new Id([0]);
+    assert.deepEqual(id2.bytes, [0]);
+    assert.equal(id2.toString(), '00');
+  });
+
   it('should create an Id from byte array', function () {
     var bytes = sha1('key', {asBytes: true});
     assert.deepEqual(bytes, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);

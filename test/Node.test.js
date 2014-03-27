@@ -460,6 +460,42 @@ describe('Node', function() {
 
   });
 
+  describe('onStoreValue', function () {
+
+    it('should store a value', function () {
+      var node1 = new Node('node1');
+      var id = Id.create('foo');
+      node1.onStoreValue(id, 'bar');
+
+      assert.deepEqual(Object.keys(node1.values), [sha1('foo')]);
+      assert.deepEqual(node1.values[sha1('foo')], 'bar');
+    });
+
+    it('should store multiple values', function () {
+      var node1 = new Node('node1');
+      node1.onStoreValue(Id.create('foo'), 'bar');
+      node1.onStoreValue(Id.create('ooz'), 'baz');
+
+      assert.deepEqual(Object.keys(node1.values).sort(), [sha1('foo'), sha1('ooz')]);
+      assert.deepEqual(node1.values[sha1('foo')], 'bar');
+      assert.deepEqual(node1.values[sha1('ooz')], 'baz');
+    });
+
+    it('should replace a stored a value', function () {
+      var node1 = new Node('node1');
+      node1.onStoreValue(Id.create('foo'), 'bar');
+
+      assert.deepEqual(Object.keys(node1.values), [sha1('foo')]);
+      assert.deepEqual(node1.values[sha1('foo')], 'bar');
+
+      node1.onStoreValue(Id.create('foo'), 'baz');
+
+      assert.deepEqual(Object.keys(node1.values), [sha1('foo')]);
+      assert.deepEqual(node1.values[sha1('foo')], 'baz');
+    });
+
+  });
+
   it.skip('should find a value', function () {
 
   });
@@ -471,7 +507,7 @@ describe('Node', function() {
       assert.strictEqual(node1.onPing(), true);
     });
 
-  })
+  });
 
   it.skip('should join a network', function () {
 
