@@ -1,4 +1,5 @@
 var assert = require('assert'),
+    sha1 = require('sha1'),
     Id = require('../lib/Id'),
     Node = require('../lib/Node'),
     Contact = require('../lib/Contact');
@@ -52,6 +53,45 @@ describe('Contact', function() {
     contact.findContact(node2.id).then(function (results) {
       assert.deepEqual(results, [new Contact(node2.id, node2)]);
     });
+  });
+
+  it('should throw an error when finding a value failed', function (done) {
+    var contact = new Contact(sha1('node1')); // a contact without node
+
+    contact.findContact(sha1('node2'))
+        .catch(function (err) {
+          assert(/Connection error/.test(err));
+          done();
+        });
+  });
+
+  it('should store a value', function (done) {
+    var node1 = new Node('node1');
+    var contact = new Contact(node1.id, node1);
+
+    var key = Id.create('foo');
+    var value = 'bar';
+
+    contact.storeValue(key, value)
+        .then(function () {
+          assert.equal(Object.keys(node1.values).length, 1);
+          assert.equal(node1.values[key], 'bar');
+
+          done();
+        });
+  });
+
+  it('should throw an error when storing a value failed', function (done) {
+    var contact = new Contact(sha1('node1')); // a contact without node
+
+    var key = Id.create('foo');
+    var value = 'bar';
+
+    contact.storeValue(key, value)
+        .catch(function (err) {
+          assert(/Connection error/.test(err));
+          done();
+        });
   });
 
 });

@@ -79,4 +79,12 @@ describe('Id', function() {
     assert.deepEqual(id2.toJSON(), 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
   });
 
+  it('should throw an error when the bytes are out of range', function () {
+    var id1 = new Id(sha1('key', {asBytes: true}));
+    assert.deepEqual(id1.toJSON(), 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+
+    var id2 = new Id(sha1('key'));
+    assert.deepEqual(id2.toJSON(), 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+  });
+
 });
