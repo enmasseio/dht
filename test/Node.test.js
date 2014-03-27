@@ -29,7 +29,7 @@ describe('Node', function() {
     it('should store a node connection in the right bucket', function (done) {
       var node1 = new Node('node1');
 
-      var id2 = new Id(sha1('node2'));
+      var id2 = Id.create('node2');
       var contact2 = new Contact(id2);
       var index2 = util.bucketIndex(node1.id, id2);
       assert.equal(index2, 159);
