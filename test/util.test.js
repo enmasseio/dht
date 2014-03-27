@@ -11,7 +11,6 @@ describe('util', function() {
         s;
 
     assert.deepEqual(id1, {
-      hex: 'a62f2225bf70bfaccbc7f1ef2a397836717377de',
       bytes: [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]
     });
 
@@ -54,7 +53,6 @@ describe('util', function() {
         s;
 
     assert.deepEqual(id1, {
-      hex: 'a62f2225bf70bfaccbc7f1ef2a397836717377de',
       bytes: [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]
     });
 
