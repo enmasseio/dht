@@ -762,7 +762,7 @@ describe('Node', function() {
           });
     });
 
-    it.skip ('should find a value not stored on the requested node', function (done) {
+    it ('should find a value not stored on the requested node', function (done) {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
       var contact2 = new Contact(node2.id, node2);
@@ -771,7 +771,7 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.storeNode(contact2),
+            node1.onStoreNode(contact2),
             node2.storeValue(key, value)
           ])
           .then(function () {
@@ -784,13 +784,14 @@ describe('Node', function() {
           });
     });
 
-    it.skip ('should throw an error when a value is not found', function (done) {
+    it ('should throw an error when a value is not found', function (done) {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
       var contact2 = new Contact(node2.id, node2);
+      var key = Id.create('foo');
 
       node1
-          .storeNode(contact2)
+          .onStoreNode(contact2)
           .then(function () {
             return node1.findValue(key);
           })
