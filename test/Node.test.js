@@ -630,7 +630,7 @@ describe('Node', function() {
       var node0 = new Node('node0');
 
       var nodes = [];
-      for (var i = 1; i < 22; i++) { // TODO: change 22 to 50 or 100
+      for (var i = 1; i < 50; i++) {
         var nodeI = new Node('node' + i);
         nodes.push(nodeI);
       }
@@ -683,7 +683,122 @@ describe('Node', function() {
     });
   });
 
-  it.skip('should find a value', function () {
+  describe('onFindValue', function () {
+
+    it('should return a value from a node when available', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var node3 = new Node('node3');
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(node3.id, node3);
+      var key = Id.create('foo');
+
+      Promise
+          .all([
+              node1.onStoreNode(contact2),
+              node1.onStoreNode(contact3)
+          ])
+
+          .then(function () {
+            return node1.onStoreValue(key, 'bar');
+          })
+
+          .then(function () {
+            assert.deepEqual(node1.onFindValue(key), {
+              value: 'bar',
+              nodes: null
+            });
+          })
+
+          .then(function () {
+            done()
+          });
+    });
+
+    it('should return the closest contacts from a node a value is not found', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var node3 = new Node('node3');
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(node3.id, node3);
+      var key = Id.create('foo');
+
+      Promise
+          .all([
+            node1.onStoreNode(contact2),
+            node1.onStoreNode(contact3)
+          ])
+
+          .then(function () {
+            assert.deepEqual(node1.onFindValue(key), {
+              value: null,
+              nodes: [contact2, contact3]
+            });
+          })
+
+          .then(function () {
+            done()
+          });
+    });
+
+  });
+
+  describe('findValue', function () {
+
+    it('should find a value stored on the requested node', function (done) {
+      var node1 = new Node('node1');
+      var key = Id.create('foo');
+      var value = 'bar';
+
+      node1
+          .storeValue(key, value)
+          .then(function () {
+            return node1.findValue(key);
+          })
+          .then(function (value) {
+            assert.equal(value, 'bar');
+
+            done();
+          });
+    });
+
+    it.skip ('should find a value not stored on the requested node', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var contact2 = new Contact(node2.id, node2);
+      var key = Id.create('foo');
+      var value = 'bar';
+
+      Promise
+          .all([
+            node1.storeNode(contact2),
+            node2.storeValue(key, value)
+          ])
+          .then(function () {
+            return node1.findValue(key);
+          })
+          .then(function (value) {
+            assert.equal(value, 'bar');
+
+            done();
+          });
+    });
+
+    it.skip ('should throw an error when a value is not found', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var contact2 = new Contact(node2.id, node2);
+
+      node1
+          .storeNode(contact2)
+          .then(function () {
+            return node1.findValue(key);
+          })
+          .catch(function (err) {
+            assert(/Value not found/.test(err));
+            done();
+          });
+    });
 
   });
 

@@ -91,4 +91,71 @@ describe('Contact', function() {
         });
   });
 
+  it('should find a value', function (done) {
+    var node1 = new Node('node1');
+    var node2 = new Node('node2');
+    var contact1 = new Contact(node1.id, node1);
+    var contact2 = new Contact(node2.id, node2);
+
+    var key = Id.create('foo');
+    var value = 'bar';
+
+    node1.storeValue(key, value);
+
+    node1
+        .onStoreNode(contact2)
+
+        .then(function () {
+          return contact1.findValue(key)
+        })
+
+        .then(function (response) {
+          assert.deepEqual(response, {
+            value: 'bar',
+            nodes: null
+          });
+
+          done();
+        });
+  });
+
+  it('should receive closest nodes when value is not found', function (done) {
+    var node1 = new Node('node1');
+    var node2 = new Node('node2');
+    var contact1 = new Contact(node1.id, node1);
+    var contact2 = new Contact(node2.id, node2);
+
+    var key = Id.create('foo');
+
+    node1
+        .onStoreNode(contact2)
+
+        .then(function () {
+          return contact1.findValue(key)
+        })
+
+        .then(function (response) {
+          assert.deepEqual(response, {
+            value: null,
+            nodes: [contact2]
+          });
+
+          done();
+        });
+  });
+
+  it('should throw an error when searching a value failed', function (done) {
+    var contact1 = new Contact(Id.create('node1')); // a contact without node (= dead)
+
+    var key = Id.create('foo');
+
+    contact1
+        .findValue(key)
+        .catch(function (err) {
+          assert(/Connection error/.test(err));
+
+          done();
+        });
+  });
+
 });
