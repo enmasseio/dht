@@ -176,7 +176,7 @@ describe('Node', function() {
 
             // change the leastSeen to dead
             var leastSeen = bucket[0];
-            leastSeen.node.leave();
+            delete leastSeen.node;
 
             return node1.onStoreContact(contact2);
           })
@@ -215,7 +215,7 @@ describe('Node', function() {
           });
     });
 
-  })
+  });
   
   describe('onFindContact', function () {
     var node1;
@@ -238,7 +238,6 @@ describe('Node', function() {
           .then(function () {
             done();
           });
-      // console.log(bucketsToJSON(node1.buckets));
     });
 
     it('should find the closest k contacts from a node having less than k contacts', function (done) {
@@ -289,7 +288,7 @@ describe('Node', function() {
 
     it('should find the closest k contacts from a node which is not listed itself', function () {
       // node 100 is not listed in the contacts of node1
-      var searchedNode = new Node('node100');
+      var searchedNode = new Node('foo');
       var id = searchedNode.id;
       var contacts = node1.onFindContact(id);
 
@@ -297,7 +296,8 @@ describe('Node', function() {
       var allContacts = node1.buckets
           .reduce(function (prev, cur) {
             return prev.concat(cur);
-          }).sort(function (a, b) {
+          })
+          .sort(function (a, b) {
             return util.compare(util.distance(id, a.id), util.distance(id, b.id));
           })
           .splice(0, 20);
@@ -315,7 +315,8 @@ describe('Node', function() {
       var allContacts = node1.buckets
           .reduce(function (prev, cur) {
             return prev.concat(cur);
-          }).sort(function (a, b) {
+          })
+          .sort(function (a, b) {
             return util.compare(util.distance(id, a.id), util.distance(id, b.id));
           })
           .splice(0, 20);
@@ -331,7 +332,8 @@ describe('Node', function() {
     it('should find the closest k contacts in a network one level deep', function (done) {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
-      var node3 = new Node('node3');
+      var node3 = new Node('node4');
+      var contact1 = new Contact(node1.id, node1);
       var contact2 = new Contact(node2.id, node2);
       var contact3 = new Contact(node3.id, node3);
 
@@ -346,15 +348,61 @@ describe('Node', function() {
             return node1.findContact(sha1('node2'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact2, contact3]);
+            assert.deepEqual(contacts, [contact2, contact3, contact1]);
           })
 
-          // find node3
+          // find node4
           .then(function () {
-            return node1.findContact(sha1('node3'));
+            return node1.findContact(sha1('node4'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact3, contact2]);
+            assert.deepEqual(contacts, [contact3, contact1, contact2]);
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it ('should find the closest k contacts in a network with one level deep and special outlier bucket', function (done) {
+      var node0 = new Node('node0');
+
+      var nodes = [];
+      for (var i = 1; i < 22; i++) {
+        var nodeI = new Node('node' + i);
+        nodes.push(nodeI);
+      }
+      // there is an outlier, node10, in its own bucket
+
+      var k = 20;
+      var allContacts;
+
+      Promise
+          .map(nodes, function (node) {
+            var contact = new Contact(node.id, node);
+            return node0.onStoreContact(contact);
+          })
+
+          .then(function () {
+            // node0 has not stored all contacts (only k per bucket)
+            allContacts = node0.buckets
+                .filter(function (bucket) {
+                  return bucket;
+                })
+                .reduce(function (prev, cur) {
+                  return prev.concat(cur);
+                });
+
+            allContacts.push(new Contact(node0.id, node0));
+
+            util.sortByDistance(allContacts, Id.create('foo'));
+          })
+
+          .then(function () {
+            return node0.findContact(sha1('foo'));
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, allContacts.slice(0, k));
           })
 
           .then(function () {
@@ -366,6 +414,7 @@ describe('Node', function() {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
       var node3 = new Node('node3');
+      var contact1 = new Contact(node1.id, node1);
       var contact2 = new Contact(node2.id, node2);
       var contact3 = new Contact(node3.id, node3);
 
@@ -380,7 +429,7 @@ describe('Node', function() {
             return node2.findContact(sha1('node3'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact3]);
+            assert.deepEqual(contacts, [contact3, contact2]);
           })
 
           // find node2 from node1
@@ -388,7 +437,7 @@ describe('Node', function() {
             return node1.findContact(sha1('node2'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact2, contact3]);
+            assert.deepEqual(contacts, [contact2, contact3, contact1]);
           })
 
           // find node3 from node1
@@ -396,7 +445,7 @@ describe('Node', function() {
             return node1.findContact(sha1('node3'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact3, contact2]);
+            assert.deepEqual(contacts, [contact3, contact1, contact2]);
           })
 
           .then(function () {
@@ -411,6 +460,7 @@ describe('Node', function() {
     it('should find the closest k contacts in a network with a dead node', function (done) {
       var node1 = new Node('node1');
       var node2 = new Node('node2');
+      var contact1 = new Contact(node1.id, node1);
       var contact2 = new Contact(node2.id); // Note: no node specified! node2 is dead
 
       Promise
@@ -420,10 +470,10 @@ describe('Node', function() {
 
           // find node2 from node1
           .then(function () {
-            return node2.findContact(sha1('node1'));
+            return node1.findContact(sha1('node2'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, []); // must return nothing as node2 is dead
+            assert.deepEqual(contacts, [contact1]); // must return only node1 as node2 is dead
           })
 
           .then(function () {
@@ -431,9 +481,10 @@ describe('Node', function() {
           });
     });
 
-    it.skip('should find the closest k contacts in a network with some dead nodes', function (done) {
+    it('should find the closest k contacts in a network with some dead nodes', function (done) {
       var node1 = new Node('node1');
       var node3 = new Node('node3');
+      var contact1 = new Contact(node1.id, node1);
       var contact2 = new Contact(sha1('node2')); // Note: no node specified! node2 is dead
       var contact3 = new Contact(node3.id, node3);
       var contact4 = new Contact(sha1('node4')); // Note: no node specified! node4 is dead
@@ -450,7 +501,8 @@ describe('Node', function() {
             return node1.findContact(sha1('node4'));
           })
           .then(function (contacts) {
-            assert.deepEqual(contacts, [contact3]); // should return the only alive contact: node3
+            // should return the only alive contacts: node3 and node1
+            assert.deepEqual(contacts, [contact3, contact1]);
           })
 
           .then(function () {
@@ -494,6 +546,141 @@ describe('Node', function() {
       assert.deepEqual(node1.values[sha1('foo')], 'baz');
     });
 
+  });
+
+  describe('storeValue', function () {
+
+    it ('should store a value on nodes in the network', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var node3 = new Node('node3');
+      var contact1 = new Contact(node1.id, node1);
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(node3.id, node3);
+
+      Promise
+          .all([
+            node1.onStoreContact(contact2),
+            node2.onStoreContact(contact3)
+          ])
+
+          .then(function () {
+            return node1.storeValue(sha1('foo'), 'bar');
+          })
+
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact2, contact3, contact1]);
+
+            assert.equal(Object.keys(node1.values).length, 1);
+            assert.deepEqual(node1.values[sha1('foo')], 'bar');
+
+            assert.equal(Object.keys(node2.values).length, 1);
+            assert.deepEqual(node2.values[sha1('foo')], 'bar');
+
+            assert.equal(Object.keys(node3.values).length, 1);
+            assert.deepEqual(node3.values[sha1('foo')], 'bar');
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it ('should store a value in a network containing dead nodes', function (done) {
+      var node1 = new Node('node1');
+      var node2 = new Node('node2');
+      var node4 = new Node('node4');
+      var contact1 = new Contact(node1.id, node1);
+      var contact2 = new Contact(node2.id, node2);
+      var contact3 = new Contact(Id.create('node3')); // dead contact (no node specified)
+      var contact4 = new Contact(node4.id, node4);
+      var contact5 = new Contact(Id.create('node5')); // dead contact (no node specified)
+
+      Promise
+          .all([
+            node1.onStoreContact(contact2),
+            node1.onStoreContact(contact3),
+            node2.onStoreContact(contact4),
+            node2.onStoreContact(contact5)
+          ])
+
+          .then(function () {
+            return node1.storeValue(sha1('foo'), 'bar');
+          })
+
+          .then(function (contacts) {
+            assert.deepEqual(contacts, [contact2, contact4, contact1]);
+
+            assert.equal(Object.keys(node1.values).length, 1);
+            assert.deepEqual(node1.values[sha1('foo')], 'bar');
+
+            assert.equal(Object.keys(node2.values).length, 1);
+            assert.deepEqual(node2.values[sha1('foo')], 'bar');
+
+            assert.equal(Object.keys(node4.values).length, 1);
+            assert.deepEqual(node4.values[sha1('foo')], 'bar');
+          })
+
+          .then(function () {
+            done();
+          });
+    });
+
+    it ('should store a value on the k closest nodes of the network', function (done) {
+      var node0 = new Node('node0');
+
+      var nodes = [];
+      for (var i = 1; i < 22; i++) { // TODO: change 22 to 50 or 100
+        var nodeI = new Node('node' + i);
+        nodes.push(nodeI);
+      }
+
+      var k = 20;
+      var allContacts;
+
+      Promise
+          .map(nodes, function (node) {
+            var contact = new Contact(node.id, node);
+            return node0.onStoreContact(contact);
+          })
+
+          .then(function () {
+            // node0 has not stored all contacts (only k per bucket)
+            allContacts = node0.buckets
+                .filter(function (bucket) {
+                  return bucket;
+                })
+                .reduce(function (prev, cur) {
+                  return prev.concat(cur);
+                }, [new Contact(node0.id, node0)]);
+
+            util.sortByDistance(allContacts, Id.create('foo'));
+          })
+
+          .then(function () {
+            return node0.storeValue(sha1('foo'), 'bar');
+          })
+          .then(function (contacts) {
+            assert.deepEqual(contacts, allContacts.slice(0, k));
+
+            var withValue = allContacts.slice(0, k);
+            var withoutValue = allContacts.slice(k);
+            assert.equal(withValue.length, k);
+
+            withValue.forEach(function (contact, index) {
+              assert.equal(Object.keys(contact.node.values).length, 1);
+              assert.deepEqual(contact.node.values[sha1('foo')], 'bar');
+            });
+
+            withoutValue.forEach(function (contact) {
+              assert.equal(Object.keys(contact.node.values).length, 0);
+            })
+          })
+
+          .then(function () {
+            done();
+          });
+    });
   });
 
   it.skip('should find a value', function () {

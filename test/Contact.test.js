@@ -32,10 +32,7 @@ describe('Contact', function() {
   });
 
   it('should ping a dead contact', function (done) {
-    var node = new Node('test');
-    node.leave();
-
-    var contact = new Contact(node.id, node);
+    var contact = new Contact(sha1('node1')); // no node specified
 
     contact.ping().then(function (alive) {
       assert.strictEqual(alive, false);
