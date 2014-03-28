@@ -43,11 +43,11 @@ describe('Contact', function() {
   it('should find a contact', function () {
     var node1 = new Node('node1');
     var node2 = new Node('node2');
-    node1.onStoreContact(new Contact(node2.id, node2));
+    node1.onStoreNode(new Contact(node2.id, node2));
     
     var contact = new Contact(node1.id, node1);
     
-    contact.findContact(node2.id).then(function (results) {
+    contact.findNode(node2.id).then(function (results) {
       assert.deepEqual(results, [new Contact(node2.id, node2)]);
     });
   });
@@ -55,7 +55,7 @@ describe('Contact', function() {
   it('should throw an error when finding a value failed', function (done) {
     var contact = new Contact(sha1('node1')); // a contact without node
 
-    contact.findContact(sha1('node2'))
+    contact.findNode(sha1('node2'))
         .catch(function (err) {
           assert(/Connection error/.test(err));
           done();

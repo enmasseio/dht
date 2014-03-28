@@ -24,7 +24,7 @@ describe('Node', function() {
     assert.throws(function () {new Node(1234)}, /Parameter name must be a non-empty string/);
   });
 
-  describe('onStoreContact', function () {
+  describe('onStoreNode', function () {
 
     it('should store a node connection in the right bucket', function (done) {
       var node1 = new Node('node1');
@@ -36,7 +36,7 @@ describe('Node', function() {
 
       var id3, contact3, index3;
 
-      node1.onStoreContact(contact2)
+      node1.onStoreNode(contact2)
           .then(function () {
             assert.deepEqual(node1.buckets[index2], [contact2]);
           })
@@ -46,7 +46,7 @@ describe('Node', function() {
             index3 = util.bucketIndex(node1.id, id3);
             assert.equal(index3, 158);
 
-            return node1.onStoreContact(contact3);
+            return node1.onStoreNode(contact3);
           })
           .then(function () {
             assert.deepEqual(node1.buckets[index3], [contact3]);
@@ -63,14 +63,14 @@ describe('Node', function() {
       var index2 = util.bucketIndex(node1.id, id2);
       assert.equal(index2, 159);
 
-      node1.onStoreContact(contact2)
+      node1.onStoreNode(contact2)
           .then(function () {
             assert.deepEqual(node1.buckets[index2], [contact2]);
           })
 
           .then(function() {
             // storing again should leave the bucket as it is
-            return node1.onStoreContact(contact2);
+            return node1.onStoreNode(contact2);
           })
           .then(function () {
             assert.deepEqual(node1.buckets[index2], [contact2]);
@@ -92,19 +92,19 @@ describe('Node', function() {
       var index4 = util.bucketIndex(node1.id, id4);
       assert.equal(index4, 158);
 
-      node1.onStoreContact(contact3)
+      node1.onStoreNode(contact3)
           .then(function () { assert.deepEqual(node1.buckets[158], [contact3]); })
 
-          .then(function () { return node1.onStoreContact(contact4); })
+          .then(function () { return node1.onStoreNode(contact4); })
           .then(function () {assert.deepEqual(node1.buckets[158], [contact3, contact4]); })
 
-          .then(function () { return node1.onStoreContact(contact3); })
+          .then(function () { return node1.onStoreNode(contact3); })
           .then(function () {assert.deepEqual(node1.buckets[158], [contact4, contact3]); })
 
-          .then(function () { return node1.onStoreContact(contact3); })
+          .then(function () { return node1.onStoreNode(contact3); })
           .then(function () {assert.deepEqual(node1.buckets[158], [contact4, contact3]); })
 
-          .then(function () { return node1.onStoreContact(contact4); })
+          .then(function () { return node1.onStoreNode(contact4); })
           .then(function () {assert.deepEqual(node1.buckets[158], [contact3, contact4]); })
 
           .then(function () {
@@ -131,7 +131,7 @@ describe('Node', function() {
       var bucket, leastSeen;
       Promise
           .map(contacts, function (contact) {
-            return node1.onStoreContact(contact);
+            return node1.onStoreNode(contact);
           })
           .then(function () {
             bucket = node1.buckets[index2];
@@ -139,7 +139,7 @@ describe('Node', function() {
 
             leastSeen = bucket[0];
 
-            return node1.onStoreContact(contact2);
+            return node1.onStoreNode(contact2);
           })
           .then(function () {
             // node2 should not be added, leastSeen should be moved to tail
@@ -168,7 +168,7 @@ describe('Node', function() {
       var bucket;
       Promise
           .map(contacts, function (contact) {
-            return node1.onStoreContact(contact);
+            return node1.onStoreNode(contact);
           })
           .then(function () {
             bucket = node1.buckets[index2];
@@ -178,7 +178,7 @@ describe('Node', function() {
             var leastSeen = bucket[0];
             delete leastSeen.node;
 
-            return node1.onStoreContact(contact2);
+            return node1.onStoreNode(contact2);
           })
           .then(function () {
             // node2 should be added, leastSeen should be removed
@@ -191,16 +191,16 @@ describe('Node', function() {
       var node1 = new Node('node1');
 
       var errs = [];
-      node1.onStoreContact()
+      node1.onStoreNode()
           .catch(function (err) {errs.push(err)})
 
           .then(function () {
-            return node1.onStoreContact(2);
+            return node1.onStoreNode(2);
           })
           .catch(function (err) {errs.push(err)})
 
           .then(function () {
-            return node1.onStoreContact({});
+            return node1.onStoreNode({});
           })
           .catch(function (err) {errs.push(err)})
 
@@ -217,7 +217,7 @@ describe('Node', function() {
 
   });
   
-  describe('onFindContact', function () {
+  describe('onFindNode', function () {
     var node1;
 
     before(function (done) {
@@ -233,7 +233,7 @@ describe('Node', function() {
 
       Promise
           .map(contacts, function (contact) {
-            return node1.onStoreContact(contact);
+            return node1.onStoreNode(contact);
           })
           .then(function () {
             done();
@@ -245,12 +245,12 @@ describe('Node', function() {
 
       // node has no contacts
       var someId = new Id(sha1('someId'));
-      assert.equal(node.onFindContact(someId).length, 0);
+      assert.equal(node.onFindNode(someId).length, 0);
 
       // node with one contact
       var contact = new Contact(sha1('node2'));
-      node.onStoreContact(contact).then(function () {
-        assert.equal(node.onFindContact(someId).length, 1);
+      node.onStoreNode(contact).then(function () {
+        assert.equal(node.onFindNode(someId).length, 1);
         done();
       });
     });
@@ -266,7 +266,7 @@ describe('Node', function() {
       assert.equal(node1.buckets[index].length, 20,
           'Bucket with ' + theLuckyBucket + ' must be filled for this test');
 
-      var contacts = node1.onFindContact(id);
+      var contacts = node1.onFindNode(id);
       assert.equal(contacts.length, 20);
       assert.deepEqual(contacts[0].node, searchedNode);
     });
@@ -281,7 +281,7 @@ describe('Node', function() {
       assert.equal(index, theLuckyBucket);
       assert.equal(node1.buckets[index].length, 2, 'huh? I thought bucket ' + theLuckyBucket + ' contained 2 nodes?');
 
-      var contacts = node1.onFindContact(id);
+      var contacts = node1.onFindNode(id);
       assert.equal(contacts.length, 20);
       assert.deepEqual(contacts[0].node, searchedNode);
     });
@@ -290,7 +290,7 @@ describe('Node', function() {
       // node 100 is not listed in the contacts of node1
       var searchedNode = new Node('foo');
       var id = searchedNode.id;
-      var contacts = node1.onFindContact(id);
+      var contacts = node1.onFindNode(id);
 
       // do the search ourselves, see if it matches the returned results
       var allContacts = node1.buckets
@@ -309,7 +309,7 @@ describe('Node', function() {
     it('should find the closest k contacts to the nodes id itself', function () {
       // node 100 is not listed in the contacts of node1
       var id = node1.id;
-      var contacts = node1.onFindContact(id);
+      var contacts = node1.onFindNode(id);
 
       // do the search ourselves, see if it matches the returned results
       var allContacts = node1.buckets
@@ -327,7 +327,7 @@ describe('Node', function() {
 
   });
 
-  describe('findContact', function () {
+  describe('findNode', function () {
 
     it('should find the closest k contacts in a network one level deep', function (done) {
       var node1 = new Node('node1');
@@ -339,13 +339,13 @@ describe('Node', function() {
 
       Promise
           .all([
-              node1.onStoreContact(contact2),
-              node1.onStoreContact(contact3)
+              node1.onStoreNode(contact2),
+              node1.onStoreNode(contact3)
           ])
 
           // find node2
           .then(function () {
-            return node1.findContact(sha1('node2'));
+            return node1.findNode(sha1('node2'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact2, contact3, contact1]);
@@ -353,7 +353,7 @@ describe('Node', function() {
 
           // find node4
           .then(function () {
-            return node1.findContact(sha1('node4'));
+            return node1.findNode(sha1('node4'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact3, contact1, contact2]);
@@ -380,7 +380,7 @@ describe('Node', function() {
       Promise
           .map(nodes, function (node) {
             var contact = new Contact(node.id, node);
-            return node0.onStoreContact(contact);
+            return node0.onStoreNode(contact);
           })
 
           .then(function () {
@@ -399,7 +399,7 @@ describe('Node', function() {
           })
 
           .then(function () {
-            return node0.findContact(sha1('foo'));
+            return node0.findNode(sha1('foo'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, allContacts.slice(0, k));
@@ -420,13 +420,13 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.onStoreContact(contact2),
-            node2.onStoreContact(contact3)
+            node1.onStoreNode(contact2),
+            node2.onStoreNode(contact3)
           ])
 
           // find node3 from node2
           .then(function () {
-            return node2.findContact(sha1('node3'));
+            return node2.findNode(sha1('node3'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact3, contact2]);
@@ -434,7 +434,7 @@ describe('Node', function() {
 
           // find node2 from node1
           .then(function () {
-            return node1.findContact(sha1('node2'));
+            return node1.findNode(sha1('node2'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact2, contact3, contact1]);
@@ -442,7 +442,7 @@ describe('Node', function() {
 
           // find node3 from node1
           .then(function () {
-            return node1.findContact(sha1('node3'));
+            return node1.findNode(sha1('node3'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact3, contact1, contact2]);
@@ -465,12 +465,12 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.onStoreContact(contact2)
+            node1.onStoreNode(contact2)
           ])
 
           // find node2 from node1
           .then(function () {
-            return node1.findContact(sha1('node2'));
+            return node1.findNode(sha1('node2'));
           })
           .then(function (contacts) {
             assert.deepEqual(contacts, [contact1]); // must return only node1 as node2 is dead
@@ -491,14 +491,14 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.onStoreContact(contact2),
-            node1.onStoreContact(contact3),
-            node3.onStoreContact(contact4)
+            node1.onStoreNode(contact2),
+            node1.onStoreNode(contact3),
+            node3.onStoreNode(contact4)
           ])
 
           // find node4 from node1
           .then(function () {
-            return node1.findContact(sha1('node4'));
+            return node1.findNode(sha1('node4'));
           })
           .then(function (contacts) {
             // should return the only alive contacts: node3 and node1
@@ -560,8 +560,8 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.onStoreContact(contact2),
-            node2.onStoreContact(contact3)
+            node1.onStoreNode(contact2),
+            node2.onStoreNode(contact3)
           ])
 
           .then(function () {
@@ -598,10 +598,10 @@ describe('Node', function() {
 
       Promise
           .all([
-            node1.onStoreContact(contact2),
-            node1.onStoreContact(contact3),
-            node2.onStoreContact(contact4),
-            node2.onStoreContact(contact5)
+            node1.onStoreNode(contact2),
+            node1.onStoreNode(contact3),
+            node2.onStoreNode(contact4),
+            node2.onStoreNode(contact5)
           ])
 
           .then(function () {
@@ -641,7 +641,7 @@ describe('Node', function() {
       Promise
           .map(nodes, function (node) {
             var contact = new Contact(node.id, node);
-            return node0.onStoreContact(contact);
+            return node0.onStoreNode(contact);
           })
 
           .then(function () {
