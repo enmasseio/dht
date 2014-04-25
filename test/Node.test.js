@@ -453,6 +453,7 @@ describe('Node', function() {
           });
     });
 
+    // TODO: should find the closest k contacts in a network n levels deep
     it.skip('should find the closest k contacts in a network n levels deep', function () {
 
     });
@@ -812,10 +813,12 @@ describe('Node', function() {
 
   });
 
+  // TODO: should join a network
   it.skip('should join a network', function () {
 
   });
 
+  // TODO: should leave a network
   it.skip('should leave a network', function () {
 
   });

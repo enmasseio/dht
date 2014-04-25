@@ -4,7 +4,7 @@ A scalable, distributed message bus for node.js and the browser.
 
 Send messages between peers in a peer-to-peer network. Mbus uses a distributed
 hash table to locate peers and route messages to peers. This results in a
-scalable, maintenance free, flexible, and self repairing network.
+scalable, unstructured, and self repairing network.
 
 Distribus can be used to
 
@@ -32,6 +32,7 @@ Sorry, you can't yet use it... coming soon though.
 - [Distributed hash table](http://en.wikipedia.org/wiki/Distributed_hash_table)
 - [Tutorial](http://tutorials.jenkov.com/p2p/index.html)
 - [16-dht.pdf](https://www.cs.cmu.edu/~dga/15-744/S07/lectures/16-dht.pdf)
+- [Distributed applications and node.js](http://ajlopez.wordpress.com/2013/05/30/aplicaciones-distribuidas-y-node-js/)
 
 
 ## Inspiration
@@ -41,6 +42,7 @@ Sorry, you can't yet use it... coming soon though.
 - [kademlia](https://github.com/nikhilm/kademlia)
 - [dht.js](https://github.com/indutny/dht.js)
 - [node-telehash](https://github.com/mnaamani/node-telehash)
+- [SimpleMessages](https://github.com/ajlopez/SimpleMessages)
 
 
 ## Test
