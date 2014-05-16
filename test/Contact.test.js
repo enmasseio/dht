@@ -1,161 +1,56 @@
 var assert = require('assert'),
     sha1 = require('sha1'),
     Id = require('../lib/Id'),
-    Node = require('../lib/Node'),
     Contact = require('../lib/Contact');
 
 describe('Contact', function() {
 
   it('should create a contact', function () {
-    var node = new Node('test');
+    var id = sha1('key');
+    assert.strictEqual(id, 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+    var contact = new Contact({id: id, address: '127.0.0.1', port: 3000});
 
-    var contact = new Contact(node.id, node);
     assert(contact instanceof Contact);
     assert(contact.id instanceof Id);
-    assert.strictEqual(contact.node, node);
-    assert.deepEqual(contact.id, node.id);
+    assert.deepEqual(contact.id.bytes, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);
+    assert.equal(contact.address, '127.0.0.1');
+    assert.equal(contact.port, 3000);
   });
 
-  it('should throw an error when creating a Contact without new keyword', function () {
-    assert.throws(function () {Contact()}, /Constructor must be called with the new operator/);
+  it('should create a contact with just an id', function () {
+    var id = sha1('key');
+    assert.strictEqual(id, 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+    var contact = new Contact({id: id});
+
+    assert(contact instanceof Contact);
+    assert(contact.id instanceof Id);
+    assert.deepEqual(contact.id.bytes, [166,47,34,37,191,112,191,172,203,199,241,239,42,57,120,54,113,115,119,222]);
+    assert.equal(contact.address, null);
+    assert.equal(contact.port, null);
   });
 
-  it('should ping a live contact', function (done) {
-    var node = new Node('test');
+  it('should convert a contact to JSON', function () {
+    var id = sha1('key');
+    assert.strictEqual(id, 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+    var contact = new Contact({id: id, address: '127.0.0.1', port: 3000});
 
-    var contact = new Contact(node.id, node);
-
-    contact.ping().then(function (alive) {
-      assert.strictEqual(alive, true);
-      done();
-    });
+    var json = contact.toJSON();
+    assert.deepEqual(json, {id: id, address: '127.0.0.1', port: 3000});
   });
 
-  it('should ping a dead contact', function (done) {
-    var contact = new Contact(sha1('node1')); // no node specified
+  it('should convert a contact with just an id to JSON', function () {
+    var id = sha1('key');
+    assert.strictEqual(id, 'a62f2225bf70bfaccbc7f1ef2a397836717377de');
+    var contact = new Contact({id: id});
 
-    contact.ping().then(function (alive) {
-      assert.strictEqual(alive, false);
-      done();
-    });
+    var json = contact.toJSON();
+    assert.deepEqual(json, {id: id, address: null, port: null});
   });
 
-  it('should find a contact', function () {
-    var node1 = new Node('node1');
-    var node2 = new Node('node2');
-    node1.onStoreNode(new Contact(node2.id, node2));
-    
-    var contact = new Contact(node1.id, node1);
-    
-    contact.findNode(node2.id).then(function (results) {
-      assert.deepEqual(results, [new Contact(node2.id, node2)]);
-    });
-  });
-
-  it('should throw an error when finding a value failed', function (done) {
-    var contact = new Contact(sha1('node1')); // a contact without node
-
-    contact.findNode(sha1('node2'))
-        .catch(function (err) {
-          assert(/Connection error/.test(err));
-          done();
-        });
-  });
-
-  it('should store a value', function (done) {
-    var node1 = new Node('node1');
-    var contact = new Contact(node1.id, node1);
-
-    var key = Id.create('foo');
-    var value = 'bar';
-
-    contact.storeValue(key, value)
-        .then(function () {
-          assert.equal(Object.keys(node1.values).length, 1);
-          assert.equal(node1.values[key], 'bar');
-
-          done();
-        });
-  });
-
-  it('should throw an error when storing a value failed', function (done) {
-    var contact = new Contact(sha1('node1')); // a contact without node
-
-    var key = Id.create('foo');
-    var value = 'bar';
-
-    contact.storeValue(key, value)
-        .catch(function (err) {
-          assert(/Connection error/.test(err));
-          done();
-        });
-  });
-
-  it('should find a value', function (done) {
-    var node1 = new Node('node1');
-    var node2 = new Node('node2');
-    var contact1 = new Contact(node1.id, node1);
-    var contact2 = new Contact(node2.id, node2);
-
-    var key = Id.create('foo');
-    var value = 'bar';
-
-    node1.storeValue(key, value);
-
-    node1
-        .onStoreNode(contact2)
-
-        .then(function () {
-          return contact1.findValue(key)
-        })
-
-        .then(function (response) {
-          assert.deepEqual(response, {
-            value: 'bar',
-            nodes: null
-          });
-
-          done();
-        });
-  });
-
-  it('should receive closest nodes when value is not found', function (done) {
-    var node1 = new Node('node1');
-    var node2 = new Node('node2');
-    var contact1 = new Contact(node1.id, node1);
-    var contact2 = new Contact(node2.id, node2);
-
-    var key = Id.create('foo');
-
-    node1
-        .onStoreNode(contact2)
-
-        .then(function () {
-          return contact1.findValue(key)
-        })
-
-        .then(function (response) {
-          assert.deepEqual(response, {
-            value: null,
-            nodes: [contact2]
-          });
-
-          done();
-        });
-  });
-
-  it('should throw an error when searching a value failed', function (done) {
-    var contact1 = new Contact(Id.create('node1')); // a contact without node (= dead)
-
-    var key = Id.create('foo');
-
-    contact1
-        .findValue(key)
-        .catch(function (err) {
-          assert(/Connection error/.test(err));
-
-          done();
-        });
+  it('should throw an error when created without the new keyword', function () {
+    assert.throws(function () {
+      Contact({id: sha1('key'), address: '127.0.0.1', port: 3000});
+    })
   });
 
 });
