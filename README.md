@@ -1,8 +1,8 @@
 # dht
 
-A distributed hash table for node.js and the browser.
+A distributed hash table for node.js and the browser, based on Kademlia.
 
-Coming soon though.
+Coming soon...
 
 
 ## Literature
