@@ -4,13 +4,10 @@
   "description": "A Kademlia distributed hash table",
   "author": "Jos de Jong <wjosdejong@gmail.com> (https://github.com/josdejong)",
   "keywords": [
-    "distributed",
-    "scalable",
+    "distributed hash table",
+    "dht",
     "p2p",
-    "peer-to-peer",
-    "message bus",
-    "event",
-    "emitter"
+    "peer-to-peer"
   ],
   "repository": {
     "type": "git",
