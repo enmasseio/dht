@@ -1,28 +1,8 @@
-# distribus
+# dht
 
-A scalable, distributed message bus for node.js and the browser.
+A distributed hash table for node.js and the browser.
 
-Send messages between peers in a peer-to-peer network. Mbus uses a distributed
-hash table to locate peers and route messages to peers. This results in a
-scalable, unstructured, and self repairing network.
-
-Distribus can be used to
-
-- Send messages between peers
-- Broadcast messages
-- Publish/subscribe
-
-
-## Install
-
-Install via npm:
-
-    npm install distribus
-
-
-## Use
-
-Sorry, you can't yet use it... coming soon though.
+Coming soon though.
 
 
 ## Literature

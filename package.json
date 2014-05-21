@@ -1,7 +1,7 @@
 {
-  "name": "distribus",
-  "version": "0.0.0",
-  "description": "A scalable, distributed message bus",
+  "name": "dht",
+  "version": "0.1.0",
+  "description": "A Kademlia distributed hash table",
   "author": "Jos de Jong <wjosdejong@gmail.com> (https://github.com/josdejong)",
   "keywords": [
     "distributed",
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/enmasseio/distribus.git"
+    "url": "git://github.com/enmasseio/dht.git"
   },
   "dependencies": {
     "sha1": "^1.1.0",
